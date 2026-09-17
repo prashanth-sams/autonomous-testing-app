@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test Playground</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #666;
+    --border: #d4d4d4;
+    --accent: #2563eb;
+    --ok: #15803d;
+    --err: #b91c1c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px 16px 64px;
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0 0 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  p.lede { color: var(--muted); margin: 0 0 28px; }
+  section {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+  }
+  label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 13px; }
+  input[type=text], input[type=email], input[type=password], input[type=number], select, textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font: inherit;
+    background: #fff;
+    color: inherit;
+  }
+  .field { margin-bottom: 14px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > .field { flex: 1 1 200px; }
+  button {
+    padding: 8px 14px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--accent);
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+  }
+  button.secondary { background: #fff; color: var(--accent); }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .inline { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .inline label { margin: 0; font-weight: 400; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); }
+  th { font-size: 13px; color: var(--muted); }
+  .msg { margin-top: 12px; padding: 10px; border-radius: 6px; display: none; }
+  .msg.show { display: block; }
+  .msg.ok { background: #dcfce7; color: var(--ok); }
+  .msg.err { background: #fee2e2; color: var(--err); }
+  .hidden { display: none; }
+  #spinner { color: var(--muted); }
+  a { color: var(--accent); }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #131313; --fg: #ededed; --muted: #9a9a9a; --border: #333; }
+    input[type=text], input[type=email], input[type=password], input[type=number], select, textarea { background: #1d1d1d; }
+    button.secondary { background: transparent; }
+    .msg.ok { background: #14321f; }
+    .msg.err { background: #3a1616; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="page-title">Test Playground</h1>
+  <p class="lede">A static page of common UI controls for practising automated browser tests.</p>
+
+  <section id="section-form">
+    <h2>Login form</h2>
+    <form id="login-form" novalidate>
+      <div class="row">
+        <div class="field">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" data-testid="username" placeholder="admin" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" data-testid="password" placeholder="password123">
+        </div>
+      </div>
+      <button type="submit" id="login-btn" data-testid="login-btn">Sign in</button>
+      <button type="reset" class="secondary" id="reset-btn">Reset</button>
+      <div class="msg" id="login-msg" role="alert" data-testid="login-msg"></div>
+    </form>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:0">Valid credentials: <code>admin</code> / <code>password123</code></p>
+  </section>
+
+  <section id="section-inputs">
+    <h2>Input controls</h2>
+    <div class="row">
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" data-testid="email">
+      </div>
+      <div class="field">
+        <label for="quantity">Quantity</label>
+        <input type="number" id="quantity" data-testid="quantity" value="1" min="0" max="99">
+      </div>
+      <div class="field">
+        <label for="country">Country</label>
+        <select id="country" data-testid="country">
+          <option value="">-- select --</option>
+          <option value="in">India</option>
+          <option value="us">United States</option>
+          <option value="de">Germany</option>
+          <option value="jp">Japan</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="comments">Comments</label>
+      <textarea id="comments" data-testid="comments" rows="3"></textarea>
+    </div>
+    <div class="row">
+      <div class="field">
+        <label>Interests (checkbox)</label>
+        <div class="inline"><input type="checkbox" id="chk-api" value="api"><label for="chk-api">API</label></div>
+        <div class="inline"><input type="checkbox" id="chk-ui" value="ui"><label for="chk-ui">UI</label></div>
+        <div class="inline"><input type="checkbox" id="chk-perf" value="perf" disabled><label for="chk-perf">Performance (disabled)</label></div>
+      </div>
+      <div class="field">
+        <label>Plan (radio)</label>
+        <div class="inline"><input type="radio" name="plan" id="plan-free" value="free" checked><label for="plan-free">Free</label></div>
+        <div class="inline"><input type="radio" name="plan" id="plan-pro" value="pro"><label for="plan-pro">Pro</label></div>
+        <div class="inline"><input type="radio" name="plan" id="plan-ent" value="enterprise"><label for="plan-ent">Enterprise</label></div>
+      </div>
+    </div>
+    <button type="button" id="submit-inputs" data-testid="submit-inputs">Submit selection</button>
+    <div class="msg" id="inputs-msg" role="status" data-testid="inputs-msg"></div>
+  </section>
+
+  <section id="section-dynamic">
+    <h2>Dynamic behaviour</h2>
+    <button type="button" id="load-btn" data-testid="load-btn">Load after 2s</button>
+    <button type="button" class="secondary" id="toggle-btn" data-testid="toggle-btn">Toggle box</button>
+    <button type="button" class="secondary" id="enable-btn" data-testid="enable-btn">Enable button</button>
+    <button type="button" id="locked-btn" data-testid="locked-btn" disabled>Locked</button>
+    <p id="spinner" class="hidden" data-testid="spinner">Loading&hellip;</p>
+    <p id="loaded-text" class="hidden" data-testid="loaded-text">Content loaded successfully.</p>
+    <p id="toggle-box" data-testid="toggle-box">I can be hidden and shown.</p>
+    <div class="field" style="margin-top:12px">
+      <label for="new-item">Add list item</label>
+      <div class="row">
+        <input type="text" id="new-item" data-testid="new-item" style="flex:1 1 200px">
+        <button type="button" id="add-item" data-testid="add-item">Add</button>
+      </div>
+    </div>
+    <ul id="item-list" data-testid="item-list"></ul>
+  </section>
+
+  <section id="section-table">
+    <h2>Data table</h2>
+    <table id="users-table" data-testid="users-table">
+      <thead>
+        <tr><th>#</th><th>Name</th><th>Role</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr data-row="1"><td>1</td><td>Ada Lovelace</td><td>Engineer</td><td>Active</td></tr>
+        <tr data-row="2"><td>2</td><td>Grace Hopper</td><td>Admin</td><td>Active</td></tr>
+        <tr data-row="3"><td>3</td><td>Alan Turing</td><td>Engineer</td><td>Inactive</td></tr>
+        <tr data-row="4"><td>4</td><td>Katherine Johnson</td><td>Analyst</td><td>Active</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section id="section-misc">
+    <h2>Alerts, links and frames</h2>
+    <button type="button" id="alert-btn" data-testid="alert-btn">JS alert</button>
+    <button type="button" class="secondary" id="confirm-btn" data-testid="confirm-btn">JS confirm</button>
+    <button type="button" class="secondary" id="prompt-btn" data-testid="prompt-btn">JS prompt</button>
+    <p id="dialog-result" data-testid="dialog-result">No dialog yet.</p>
+    <p>
+      <a href="#section-form" id="internal-link">Internal anchor</a> &middot;
+      <a href="https://example.com" id="external-link" target="_blank" rel="noopener">New tab link</a>
+    </p>
+    <iframe id="demo-frame" data-testid="demo-frame" title="Demo frame" style="width:100%;height:90px;border:1px solid var(--border);border-radius:6px"
+      srcdoc="<body style='font:15px system-ui;padding:12px;margin:0'><p id='frame-text'>Text inside an iframe.</p><button id='frame-btn'>Frame button</button></body>"></iframe>
+  </section>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+
+  function message(el, text, ok) {
+    el.textContent = text;
+    el.className = 'msg show ' + (ok ? 'ok' : 'err');
+  }
+
+  $('login-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var user = $('username').value.trim();
+    var pass = $('password').value;
+    if (user === 'admin' && pass === 'password123') {
+      message($('login-msg'), 'Welcome, admin!', true);
+    } else if (!user || !pass) {
+      message($('login-msg'), 'Username and password are required.', false);
+    } else {
+      message($('login-msg'), 'Invalid credentials.', false);
+    }
+  });
+
+  $('login-form').addEventListener('reset', function () {
+    $('login-msg').className = 'msg';
+    $('login-msg').textContent = '';
+  });
+
+  $('submit-inputs').addEventListener('click', function () {
+    var interests = [].slice.call(document.querySelectorAll('#section-inputs input[type=checkbox]:checked'))
+      .map(function (c) { return c.value; });
+    var plan = document.querySelector('input[name=plan]:checked').value;
+    var country = $('country').value || 'none';
+    message($('inputs-msg'),
+      'Plan: ' + plan + ' | Country: ' + country + ' | Interests: ' + (interests.join(', ') || 'none'),
+      true);
+  });
+
+  $('load-btn').addEventListener('click', function () {
+    $('loaded-text').classList.add('hidden');
+    $('spinner').classList.remove('hidden');
+    setTimeout(function () {
+      $('spinner').classList.add('hidden');
+      $('loaded-text').classList.remove('hidden');
+    }, 2000);
+  });
+
+  $('toggle-btn').addEventListener('click', function () {
+    $('toggle-box').classList.toggle('hidden');
+  });
+
+  $('enable-btn').addEventListener('click', function () {
+    setTimeout(function () { $('locked-btn').disabled = false; }, 1500);
+  });
+
+  $('add-item').addEventListener('click', function () {
+    var value = $('new-item').value.trim();
+    if (!value) { return; }
+    var li = document.createElement('li');
+    li.textContent = value;
+    li.setAttribute('data-item', value);
+    $('item-list').appendChild(li);
+    $('new-item').value = '';
+  });
+
+  $('alert-btn').addEventListener('click', function () {
+    window.alert('This is an alert.');
+    $('dialog-result').textContent = 'Alert dismissed.';
+  });
+
+  $('confirm-btn').addEventListener('click', function () {
+    var ok = window.confirm('Do you accept?');
+    $('dialog-result').textContent = ok ? 'You accepted.' : 'You dismissed.';
+  });
+
+  $('prompt-btn').addEventListener('click', function () {
+    var name = window.prompt('What is your name?', '');
+    $('dialog-result').textContent = name ? 'Hello, ' + name + '!' : 'No name entered.';
+  });
+})();
+</script>
+</body>
+</html>
