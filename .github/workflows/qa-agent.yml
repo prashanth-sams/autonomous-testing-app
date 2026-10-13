@@ -1,0 +1,51 @@
+# Autonomous exploratory testing of the Test Playground.
+#
+# Serves index.html from the checkout and points the agent at it:
+# impact-driven testing on pull requests, free exploration on pushes to main
+# and manual runs. The report lands in the job summary, a single PR comment
+# and a workflow artifact with screenshots, traces and repro specs.
+name: QA Agent
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write # the action keeps one report comment per PR
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  explore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      APP_URL: http://127.0.0.1:8080
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # impact analysis needs both sides of the diff
+
+      # Keeps running in the background for the rest of the job, logging to a
+      # file. Its first request can be reset rather than refused, so the
+      # readiness probe retries on every error.
+      - name: Serve the app
+        run: |
+          python3 -m http.server 8080 --bind 127.0.0.1 > "$RUNNER_TEMP/http-server.log" 2>&1 &
+          curl --silent --show-error --fail --retry 10 --retry-all-errors --retry-delay 1 --output /dev/null "$APP_URL/"
+
+      # Advisory by default: findings are reported but only an agent error
+      # fails the job. Add `blocking: 'true'` to also fail on reproduced
+      # high-severity defects.
+      - name: Run the test agent
+        uses: prashanth-sams/autonomous-test-agent@1.0.2
+        with:
+          url: ${{ env.APP_URL }}
+          mode: ${{ github.event_name == 'pull_request' && 'pr' || 'explore' }}
+          config: qa/agent.yaml
+          comment: 'true'
