@@ -1,0 +1,35 @@
+# Autonomous Exploratory Test Agent config for the Test Playground (index.html).
+# Read by .github/workflows/qa-agent.yml. All options and their defaults:
+# https://github.com/prashanth-sams/autonomous-test-agent/blob/main/agent.example.yaml
+#
+# Sections left out keep the agent's defaults: 60 steps, 10 minutes, advisory
+# mode, navigation confined to the target host, destructive actions blocked.
+
+target:
+  # CI passes the same URL through the action's `url` input.
+  baseUrl: http://127.0.0.1:8080
+
+# Runs on every execution, whatever the diff touches. A failed expectation is
+# reported as a critical defect.
+criticalJourneys:
+  - id: login
+    name: Login
+    goal: Valid credentials sign the user in
+    hints: [sign, username, password]
+    script:
+      - { kind: fill, selector: '[data-testid=username]', value: admin }
+      - { kind: fill, selector: '[data-testid=password]', value: password123 }
+      - { kind: click, selector: '[data-testid=login-btn]' }
+      - { kind: expectText, value: 'Welcome, admin!' }
+
+# The whole app is index.html, so a change to it puts every section in scope.
+# Journey names double as planner hints, so their words match control labels.
+impactMap:
+  - paths: [index.html]
+    area: Test Playground
+    journeys:
+      - submit selection
+      - load / toggle / enable
+      - add list item
+      - alert / confirm / prompt
+    confidence: 0.9
