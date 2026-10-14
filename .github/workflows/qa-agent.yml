@@ -43,9 +43,9 @@ jobs:
       # fails the job. Add `blocking: 'true'` to also fail on reproduced
       # high-severity defects.
       - name: Run the test agent
-        uses: prashanth-sams/autonomous-test-agent@1.0.2
+        uses: prashanth-sams/autonomous-test-agent@1.0.3
         with:
           url: ${{ env.APP_URL }}
           mode: ${{ github.event_name == 'pull_request' && 'pr' || 'explore' }}
-          config: qa/agent.yaml
+          config: qa/agent2.yaml
           comment: 'true'
