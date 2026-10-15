@@ -1,0 +1,41 @@
+# PR-scoped exploratory testing for the Test Playground (index.html): the agent
+# explores only what the pull request changed, with no always-run journeys and
+# no free exploration. qa/agent.yaml is the full config.
+# All options and their defaults:
+# https://github.com/prashanth-sams/autonomous-test-agent/blob/main/agent.example.yaml
+#
+# Run it with the action's `mode: pr`, and only on pull requests that change
+# index.html. With no diff (explore mode) or a diff that maps to no journey, the
+# agent has nothing targeted to run and spends the whole budget on free
+# exploration instead.
+
+target:
+  # CI passes the same URL through the action's `url` input.
+  baseUrl: http://127.0.0.1:8080
+
+# None: critical journeys run on every execution, whatever the diff touches.
+criticalJourneys: []
+
+# Each journey gets at least 6 steps, and any budget left over beyond 3 steps
+# goes to free exploration of the whole app. Exactly 6 per journey leaves
+# nothing over: keep maxSteps at 6 x the journey count, and leave the action's
+# `max-steps` input unset, since it overrides this.
+limits:
+  maxSteps: 36
+
+# The whole app is index.html, so a change to it puts every section in scope.
+# Journey names double as planner hints, matched as substrings of action
+# descriptions, so each one uses words from a single section's controls. Avoid
+# words that whole kinds of action share: toggle (every checkbox and radio),
+# box (textbox, checkbox, combobox).
+impactMap:
+  - paths: [index.html]
+    area: Test Playground
+    journeys:
+      - username / password / sign in / reset
+      - email / quantity / comments
+      - checkbox / radio / submit selection
+      - load / enable / locked
+      - add list item
+      - alert / confirm / prompt / internal anchor
+    confidence: 0.9
