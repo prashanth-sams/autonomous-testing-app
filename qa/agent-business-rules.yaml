@@ -1,0 +1,59 @@
+# Business rules: the things no generic oracle can know is wrong. Each rule is
+# checked after every step of every mission, and a violation becomes a defect
+# with the rule's description as its title.
+#
+# A rule uses one of four checks:
+#   requireText    fails when this text is not visible
+#   forbidText     fails when this text is visible
+#   forbidElement  fails when a matching control is visible and enabled
+#   maxRequests    fails when more than `max` successful requests match
+# Text matching is a case-insensitive substring of the page's visible text.
+#
+# These rules all hold on the Test Playground today, so a run reports nothing.
+# Each one describes a regression it would catch.
+#
+# Action inputs:
+#   mode: explore
+#   config: qa/agent-business-rules.yaml
+
+target:
+  baseUrl: http://127.0.0.1:8080
+
+rules:
+  - id: page-heading-visible
+    description: The Test Playground heading is always on the page
+    # Optional: only check pages whose path matches. `*` is a wildcard
+    # (/account/* matches /account/orders). The path ignores the query string
+    # and #anchor, and number segments read as :id (/orders/:id). Without
+    # `route`, the rule applies everywhere.
+    route: /
+    requireText: Test Playground
+    # low, medium, high or critical; defaults to high. With mode: blocking, a
+    # reproduced high or critical violation can block the merge.
+    severity: high
+
+  - id: no-undefined-shown
+    description: No message shows a raw undefined value
+    forbidText: undefined
+    severity: medium
+
+  - id: performance-interest-locked
+    description: The Performance interest cannot be selected
+    # `role` and `name` are both optional; `name` is a case-insensitive
+    # substring of the control's accessible name (its label or text).
+    forbidElement: { role: checkbox, name: Performance }
+    severity: medium
+
+  - id: no-credentials-in-url
+    description: Signing in never puts the credentials in the URL
+    # Counts successful requests (status below 400) across the whole run.
+    # urlPattern is a case-insensitive regex tested against the full URL;
+    # method is optional. If the login form's script broke, the browser would
+    # submit it natively as GET /?username=...&password=...
+    # On an app with an API: { method: POST, urlPattern: '/api/orders$', max: 1 }
+    maxRequests: { method: GET, urlPattern: '[?&]password=', max: 0 }
+    severity: critical
+
+# Rules run inside the invariants oracle, which is on by default.
+oracles:
+  invariants: true

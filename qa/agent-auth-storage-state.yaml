@@ -1,0 +1,34 @@
+# Start already signed in, from a saved Playwright session (storageState: the
+# cookies and localStorage of a logged-in browser), instead of typing
+# credentials on every run. Useful when login involves SSO, MFA or a CAPTCHA
+# the agent cannot script.
+#
+# Create the file by signing in once in a browser Playwright controls:
+#   npx playwright codegen --save-storage=qa/auth/storage-state.json http://127.0.0.1:8080
+# It holds a live session, so do not commit a real one: add it to .gitignore,
+# or store it as a secret and write it to this path in a workflow step before
+# the agent runs. qa/auth/storage-state.json in this repo is a harmless demo
+# that the Test Playground ignores.
+#
+# Action inputs:
+#   mode: explore
+#   config: qa/agent-auth-storage-state.yaml
+
+target:
+  baseUrl: http://127.0.0.1:8080
+
+auth:
+  # Relative to the directory the agent runs in: the repository root, for the
+  # action. A missing file stops the run before any mission, with result
+  # `error`.
+  storageStatePath: qa/auth/storage-state.json
+  # verifyText is checked only after `steps`, so a single goto is what makes it
+  # confirm the saved session is still valid. Without these two keys an expired
+  # session goes unnoticed and the agent explores the login page instead. The
+  # Playground has no signed-in text, so this checks its heading.
+  steps:
+    - { kind: goto, value: / }
+  verifyText: Test Playground
+
+limits:
+  maxSteps: 40

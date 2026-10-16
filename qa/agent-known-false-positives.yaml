@@ -1,0 +1,40 @@
+# Dismiss findings a person has judged not to be bugs, by fingerprint, so they
+# stop appearing in reports. The report counts how many it suppressed.
+#
+# Explored without this list, the Test Playground reports "Control does
+# nothing" defects for controls that work as designed: a click that changes
+# nothing on screen, or changes it only after the agent has looked. The oracle
+# cannot tell those apart from a broken handler, so a person decides once and
+# lists them here.
+#
+# Finding a fingerprint, in the run's evidence artifact:
+# - run.json: defects[].fingerprint
+# - artifacts/finding-<fingerprint>.png, the screenshot of the finding
+# A fingerprint hashes the oracle, the page path and the stable part of the
+# message (numbers, ids and ports are masked), so it is the same on every run.
+# Renaming the control, or the page it is on, changes it.
+#
+# Prefer this to switching an oracle off: oracles.unresponsiveElements: false
+# would also hide a control that really is dead.
+#
+# Action inputs:
+#   mode: explore
+#   config: qa/agent-known-false-positives.yaml
+
+target:
+  baseUrl: http://127.0.0.1:8080
+
+# Every "Control does nothing" finding seen while running the configs in qa/
+# against the Playground, each with why it is not a bug.
+knownFalsePositives:
+  - f63ce097c4cd   # Sign in: the same message was already showing
+  - 386abc17b0f6   # Submit selection: the same summary was already showing
+  - 2c03a50bf8e1   # Reset: the form was already empty
+  - f9469fe204d3   # Add: an empty item is ignored by design
+  - 85d0c7868269   # Load after 2s: clicked again while still loading
+  - 31734d8d6c73   # Enable button: unlocks Locked 1.5 s later, after the check
+  - f827e4c97b91   # Locked: has no click handler by design
+  - beba0dd06f10   # New tab link: opens a new tab; this page does not change
+
+limits:
+  maxSteps: 60

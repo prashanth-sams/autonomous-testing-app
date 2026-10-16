@@ -4,10 +4,9 @@
 # All options and their defaults:
 # https://github.com/prashanth-sams/autonomous-test-agent/blob/main/agent.example.yaml
 #
-# Run it with the action's `mode: pr`, and only on pull requests that change
-# index.html. With no diff (explore mode) or a diff that maps to no journey, the
-# agent has nothing targeted to run and spends the whole budget on free
-# exploration instead.
+# Run it with the action's `mode: pr`. A diff that maps to no journey (one that
+# leaves index.html alone) selects nothing, so the run tests nothing. The
+# action's `mode: explore` ignores freeExploration and always explores.
 
 target:
   # CI passes the same URL through the action's `url` input.
@@ -16,12 +15,16 @@ target:
 # None: critical journeys run on every execution, whatever the diff touches.
 criticalJourneys: []
 
-# Each journey gets at least 6 steps, and any budget left over beyond 3 steps
-# goes to free exploration of the whole app. Exactly 6 per journey leaves
-# nothing over: keep maxSteps at 6 x the journey count, and leave the action's
-# `max-steps` input unset, since it overrides this.
+# Each journey gets at least 6 steps, and with free exploration off any budget
+# left over goes unused: keep maxSteps at 6 x the journey count, and leave the
+# action's `max-steps` input unset, since it overrides this.
 limits:
   maxSteps: 36
+
+# Off: run only the journeys the diff maps to. The default (on) hands leftover
+# budget, and the whole budget whenever impact confidence is below 60% (e.g. a
+# diff that touches no mapped path), to free exploration of the whole app.
+freeExploration: false
 
 # The whole app is index.html, so a change to it puts every section in scope.
 # Journey names double as planner hints, matched as substrings of action

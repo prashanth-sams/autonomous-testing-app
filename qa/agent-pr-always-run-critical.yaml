@@ -1,0 +1,53 @@
+# PR smoke test: a few short scripted journeys on every pull request, whatever
+# the diff touches, a docs-only change included. Small limits keep it fast.
+#
+# By default a pr run runs a critical journey only when the diff maps to it
+# through impactMap. alwaysRunCriticalJourneys: true drops that condition. To
+# turn it on for one workflow without changing this file, use the action input
+# instead:
+#   always-run-critical-journeys: 'true'
+#
+# Action inputs:
+#   mode: pr
+#   config: qa/agent-pr-always-run-critical.yaml
+#
+# Add an impactMap (see qa/agent-pr-impact-map.yaml) to run diff-driven
+# journeys on top of these.
+
+target:
+  baseUrl: http://127.0.0.1:8080
+
+alwaysRunCriticalJourneys: true
+
+criticalJourneys:
+  - id: login
+    name: Login
+    goal: Valid credentials sign the user in
+    hints: [username, password, sign in]
+    script:
+      - { kind: fill, selector: '[data-testid=username]', value: admin }
+      - { kind: fill, selector: '[data-testid=password]', value: password123 }
+      - { kind: click, selector: '[data-testid=login-btn]' }
+      - { kind: expectText, value: 'Welcome, admin!' }
+
+  - id: submit-selection
+    name: Submit selection
+    goal: The submitted plan and interests are echoed back
+    startUrl: /#section-inputs
+    hints: [plan, interests, submit selection]
+    script:
+      - { kind: click, selector: '#plan-pro' }
+      - { kind: click, selector: '#chk-api' }
+      - { kind: click, selector: '[data-testid=submit-inputs]' }
+      - { kind: expectText, value: 'Plan: pro | Country: none | Interests: api' }
+
+# Each journey explores max(8, maxSteps / 4) = 8 steps after its 4-step script:
+# 24 steps in all, inside the 30 allowed.
+limits:
+  maxSteps: 30
+  maxDurationMs: 180000     # 3 minutes
+  # One replay per candidate defect: a broken script is replayed exactly, so a
+  # second attempt rarely changes the verdict.
+  verificationAttempts: 1
+  # Fail a step after 5 seconds rather than 10; the page is static and fast.
+  actionTimeoutMs: 5000

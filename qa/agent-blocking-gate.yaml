@@ -1,0 +1,52 @@
+# Merge gate: let the agent fail the PR check when it reproduces a serious
+# defect. The default, advisory, reports everything but never blocks.
+#
+# Verdicts (the action's `result` output, and the CLI exit code):
+#   pass    0  no defect to act on
+#   review  1  defects worth a look; never fails the job
+#   block   2  mode is blocking and at least one defect is reproduced, high or
+#              critical, and at least 70% confident
+#   error   3  the agent could not test: setup or login failed, or every
+#              mission errored; always fails the job
+# A broken critical journey step is critical and reproduces by replaying its
+# script, so a scripted journey makes a reliable gate. Medium findings, such as
+# "Control does nothing" or accessibility, never block.
+#
+# The job fails on `block` only when the action's `blocking` input is 'true'.
+# That input also sets mode: blocking for the run, so with it this key is
+# redundant; without it, a block shows as `result: block` but the job passes.
+# Set both, and make the job a required status check in branch protection.
+#
+# Action inputs:
+#   mode: pr
+#   config: qa/agent-blocking-gate.yaml
+#   blocking: 'true'
+
+target:
+  baseUrl: http://127.0.0.1:8080
+
+mode: blocking
+
+criticalJourneys:
+  - id: login
+    name: Login
+    goal: Valid credentials sign the user in
+    hints: [username, password, sign in]
+    script:
+      - { kind: fill, selector: '[data-testid=username]', value: admin }
+      - { kind: fill, selector: '[data-testid=password]', value: password123 }
+      - { kind: click, selector: '[data-testid=login-btn]' }
+      - { kind: expectText, value: 'Welcome, admin!' }
+
+# Gate every PR on login. Without this, only PRs whose diff maps to the journey
+# through impactMap would run it.
+alwaysRunCriticalJourneys: true
+
+rules:
+  - id: no-credentials-in-url
+    description: Signing in never puts the credentials in the URL
+    maxRequests: { method: GET, urlPattern: '[?&]password=', max: 0 }
+    severity: critical
+
+limits:
+  maxSteps: 30

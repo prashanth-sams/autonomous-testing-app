@@ -1,0 +1,100 @@
+# Scripted critical journeys: exact steps and exact expectations for the flows
+# that must never break. A failed step is reported as a critical defect, and is
+# confirmed by re-running the script from a clean start.
+#
+# Which journeys run:
+# - mode: explore runs every journey listed here.
+# - mode: pr runs a journey only when the diff maps to it, i.e. an impactMap
+#   entry lists its id or name under `journeys`. Below, a change to index.html
+#   selects all three. qa/agent-pr-always-run-critical.yaml runs them on every
+#   PR instead.
+#
+# Budget: each journey runs its script, then explores with its hints for
+# max(8, maxSteps / 4) more steps, all inside maxSteps. Raising maxSteps raises
+# that share too, so about three journeys run in full whatever maxSteps is.
+# List them most important first: one the budget does not reach is reported
+# under "Not tested".
+#
+# Action inputs:
+#   mode: ${{ github.event_name == 'pull_request' && 'pr' || 'explore' }}
+#   config: qa/agent-critical-journeys.yaml
+
+target:
+  baseUrl: http://127.0.0.1:8080
+
+criticalJourneys:
+  - id: login
+    name: Login
+    # Shown in the report. Optional; defaults to "Exercise the <name> journey
+    # end to end".
+    goal: Valid credentials sign the user in
+    # Words that steer the exploration after the script: actions whose
+    # description contains one are preferred. Optional; defaults to the words
+    # of `name`.
+    hints: [username, password, sign in]
+    # Step kinds: goto, fill, click, press, wait, expectText, expectNoText.
+    # Scripted steps run exactly as written: the safety policy does not filter
+    # them. Typed values are not redacted: run.json lists every script, and a
+    # defect's reproduction steps in report.md (the PR comment) can include
+    # them. Use test credentials only.
+    script:
+      - { kind: fill, selector: '[data-testid=username]', value: admin }
+      - { kind: fill, selector: '[data-testid=password]', value: password123 }
+      # Keyboard key on the focused element: Enter in the password field
+      # submits the form, as a user would.
+      - { kind: press, value: Enter }
+      # Case-insensitive substring of the page's visible text.
+      - { kind: expectText, value: 'Welcome, admin!' }
+      - { kind: expectNoText, value: 'Invalid credentials' }
+
+  - id: dynamic-content
+    name: Dynamic content
+    goal: Delayed content appears, a disabled button unlocks, and items can be added
+    # Optional page to open first, relative to target.baseUrl. Without it the
+    # journey starts on baseUrl itself.
+    startUrl: /#section-dynamic
+    hints: [load, enable, locked, add]
+    script:
+      # `description` replaces the generated step label in the report.
+      - { kind: click, selector: '[data-testid=load-btn]', description: Start the 2-second load }
+      # Milliseconds, capped at 5000.
+      - { kind: wait, value: '2500' }
+      - { kind: expectText, value: Content loaded successfully. }
+      # Hidden text does not count as visible.
+      - { kind: expectNoText, value: Loading }
+      - { kind: click, selector: '[data-testid=enable-btn]' }
+      # A click waits up to limits.actionTimeoutMs for its target to become
+      # enabled, so no wait step is needed for the 1.5-second unlock.
+      - { kind: click, selector: '[data-testid=locked-btn]', description: Click Locked once it unlocks }
+      - { kind: fill, selector: '[data-testid=new-item]', value: Buy milk }
+      - { kind: click, selector: '[data-testid=add-item]' }
+      - { kind: expectText, value: Buy milk }
+
+  # The agent dismisses every browser dialog: an alert is closed, a confirm is
+  # cancelled and a prompt is left empty. Expect the dismissed outcome.
+  - id: dialogs
+    name: Dialogs
+    goal: Dismissed dialogs report that they were dismissed
+    startUrl: /#section-misc
+    hints: [alert, confirm, prompt]
+    script:
+      - { kind: click, selector: '[data-testid=confirm-btn]' }
+      - { kind: expectText, value: You dismissed. }
+      - { kind: click, selector: '[data-testid=prompt-btn]' }
+      - { kind: expectText, value: No name entered. }
+
+# The scripts take 18 steps and each journey explores up to 15 more, so the
+# first two use 44 and dialogs explores with the 12 left. An explore run also
+# plans free exploration for the 15 steps the split leaves over, but the
+# scripts have used them, so the report lists it under "Not tested".
+limits:
+  maxSteps: 60
+
+# Selects the journeys for pr runs. Name them by id or by name; case does not
+# matter. A journey named here runs once, as its script, rather than also as a
+# separate hint-only mission.
+impactMap:
+  - paths: [index.html]
+    area: Test Playground
+    journeys: [login, dynamic-content, dialogs]
+    confidence: 0.9

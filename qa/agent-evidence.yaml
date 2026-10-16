@@ -1,0 +1,42 @@
+# Evidence: what each run records, and where. With the action, the run
+# directory is uploaded as a workflow artifact named
+# autonomous-test-agent-<attempt>-<run-id> (input upload-artifact, default
+# 'true').
+#
+# Always written, whatever this section says:
+#   report.md                  job summary and PR comment
+#   report.html                self-contained report
+#   run.json                   machine-readable result
+#   artifacts/console.log      every console message
+#   artifacts/finding-*.png    screenshot and DOM (.html) of each defect
+#   artifacts/DEF-*.spec.ts    runnable Playwright reproduction of each defect
+#
+# Action inputs:
+#   mode: explore
+#   config: qa/agent-evidence.yaml
+#   output-dir: qa-agent-runs   # replaces reporting.outputDir
+
+target:
+  baseUrl: http://127.0.0.1:8080
+  # Shown next to the target at the top of the report: "Target: <url> (build
+  # playground-local)". A fixed label, since the YAML is not templated.
+  build: playground-local
+
+reporting:
+  # Relative to the directory the agent runs in. The CLI's --out and the
+  # action's output-dir replace it.
+  outputDir: runs
+  # artifacts/video/*.webm of the whole session. Off by default: large.
+  video: true
+  # artifacts/trace.zip: every action with DOM snapshots and screenshots.
+  # Open it with `npx playwright show-trace trace.zip`.
+  trace: true
+  # artifacts/network.har: every request and response. Off by default: large,
+  # and it can contain cookies and tokens that redactKeys does not mask.
+  har: true
+
+limits:
+  maxSteps: 30
+  # Evidence is captured once per distinct defect, up to this many; the run
+  # also stops when it is reached.
+  maxDefects: 10

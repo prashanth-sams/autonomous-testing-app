@@ -1,0 +1,26 @@
+# Explore at phone size: a narrow viewport reflows the page, so controls that
+# wrap, overlap or fall off screen get exercised.
+#
+# The viewport sets the window size only. It does not emulate touch input or a
+# mobile user agent.
+#
+# Action inputs:
+#   mode: explore
+#   config: qa/agent-mobile-viewport.yaml
+
+target:
+  baseUrl: http://127.0.0.1:8080
+
+browser:
+  # chromium, firefox or webkit. The action installs Chromium only, so keep
+  # chromium there; use firefox or webkit from the CLI (--browser webkit) after
+  # `npx playwright install firefox webkit`.
+  name: chromium
+  # CI has no display. For a local run, --headed shows the browser without
+  # changing this file.
+  headless: true
+  # In CSS pixels. Default 1280 x 800.
+  viewport: { width: 390, height: 844 }
+
+limits:
+  maxSteps: 40
