@@ -1,0 +1,20 @@
+# Minimal config: only the target. Every other section keeps the agent's
+# defaults, which qa/agent-all-options.yaml spells out.
+#
+# What the defaults do with nothing else configured:
+# - mode: explore explores the whole page for up to 60 steps or 10 minutes,
+#   replays every finding from a clean start, and reports only what it saw.
+#   Navigation stays on the host of the URL, and destructive controls are
+#   never clicked.
+# - mode: pr selects nothing: with no impactMap there is no way to map the diff
+#   to a journey, so the report reads "Nothing to test". Use this file with
+#   explore runs only.
+#
+# Action inputs:
+#   mode: explore
+#   config: qa/agent-minimal.yaml
+
+target:
+  # The action's `url` input (CLI: --url) overrides this; it is here for local
+  # runs.
+  baseUrl: http://127.0.0.1:8080

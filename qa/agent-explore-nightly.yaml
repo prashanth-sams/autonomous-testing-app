@@ -1,0 +1,44 @@
+# Deep exploratory session, for a nightly schedule or a manual run rather than
+# every pull request. explore mode ignores the diff: it runs every critical
+# journey, then spends the rest of the budget exploring the whole app.
+#
+# Workflow:
+#   on:
+#     schedule: [{ cron: '0 2 * * *' }]
+#     workflow_dispatch:
+#   ...
+#   timeout-minutes: 30   # above maxDurationMs, plus a few minutes of setup
+#   ...
+#   with:
+#     mode: explore
+#     config: qa/agent-explore-nightly.yaml
+
+target:
+  baseUrl: http://127.0.0.1:8080
+
+# explore runs every critical journey, whatever impactMap says. This one gets
+# max(8, maxSteps / 4) = 50 steps (its script, then hint-guided exploration of
+# the login form), and free exploration gets the 150 left over.
+criticalJourneys:
+  - id: login
+    name: Login
+    goal: Valid credentials sign the user in
+    hints: [username, password, sign in]
+    script:
+      - { kind: fill, selector: '[data-testid=username]', value: admin }
+      - { kind: fill, selector: '[data-testid=password]', value: password123 }
+      - { kind: click, selector: '[data-testid=login-btn]' }
+      - { kind: expectText, value: 'Welcome, admin!' }
+
+# The run stops at whichever limit it reaches first, and the report names it
+# under "Stopped because".
+limits:
+  maxSteps: 200
+  maxDurationMs: 900000     # 15 minutes
+  maxDefects: 50
+  # Up to three clean-start replays per candidate, stopping at the first that
+  # reproduces it. One that never reproduces is reported as not reproduced,
+  # with low confidence, and cannot block a merge. More attempts give flaky
+  # defects more chances to show up.
+  verificationAttempts: 3
+  actionTimeoutMs: 10000

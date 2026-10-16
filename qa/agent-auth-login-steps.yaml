@@ -1,0 +1,43 @@
+# Sign in with scripted steps before any mission runs, for apps whose pages sit
+# behind a login.
+#
+# How it runs: the browser opens target.baseUrl, the steps below run once, and
+# verifyText must then be visible. Each mission afterwards reloads baseUrl in
+# the same browser context, so the session cookie or token the login set
+# carries over. If a step or the check fails, no mission runs: the result is
+# `error` (exit code 3), the job fails, and the report says why.
+#
+# The Test Playground keeps no session, so its welcome message is gone after
+# that reload. The shape is what to copy.
+#
+# Credentials: the YAML is not templated, so `${PASSWORD}` stays literal. For a
+# real account, write the config in an earlier workflow step from secrets and
+# point the action at it:
+#   - run: envsubst < qa/agent-auth.template.yaml > "$RUNNER_TEMP/agent.yaml"
+#     env: { QA_PASSWORD: '${{ secrets.QA_PASSWORD }}' }
+#   - uses: prashanth-sams/autonomous-test-agent@v1
+#     with: { config: '${{ runner.temp }}/agent.yaml', ... }
+# Login steps are not written to the report, and redactKeys masks `password`
+# values in finding evidence. Use a dedicated test account all the same.
+#
+# Action inputs:
+#   mode: explore        # or pr; login runs before missions either way
+#   config: qa/agent-auth-login-steps.yaml
+
+target:
+  baseUrl: http://127.0.0.1:8080
+
+auth:
+  # Same step kinds as a critical journey script: goto, fill, click, press,
+  # wait, expectText, expectNoText. A goto is relative to target.baseUrl.
+  steps:
+    - { kind: goto, value: / }
+    - { kind: fill, selector: '[data-testid=username]', value: admin }
+    - { kind: fill, selector: '[data-testid=password]', value: password123 }
+    - { kind: click, selector: '[data-testid=login-btn]' }
+  # Case-insensitive text that proves the login worked, e.g. the user's name or
+  # "Sign out". Checked only after `steps`.
+  verifyText: 'Welcome, admin!'
+
+limits:
+  maxSteps: 40

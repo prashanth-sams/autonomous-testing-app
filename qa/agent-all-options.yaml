@@ -1,0 +1,102 @@
+# Every option the agent reads, each set to its default value, so this file
+# behaves exactly like qa/agent-minimal.yaml. Copy the sections you need into
+# your own config and change them there; anything you leave out keeps the value
+# shown here.
+#
+# Two merge rules matter when you copy from here:
+# - Objects merge key by key: `limits: { maxSteps: 30 }` keeps the other limits.
+# - Lists replace the default outright: `destructiveKeywords: [reset]` drops
+#   delete, wipe and the rest, so repeat the defaults you still want.
+#
+# The config is plain YAML: `${VAR}` is not expanded. To feed secrets in, write
+# the file in a workflow step and pass its path to the action's `config` input.
+#
+# Upstream reference: https://github.com/prashanth-sams/autonomous-test-agent/blob/main/agent.example.yaml
+
+target:
+  # The action's `url` input (CLI: --url) overrides this.
+  baseUrl: http://127.0.0.1:8080
+  # Optional label, shown next to the target in the report. No default.
+  # build: local
+
+# Optional: sign in once before any mission runs. No default. See
+# qa/agent-auth-login-steps.yaml and qa/agent-auth-storage-state.yaml.
+# auth:
+#   steps: []
+#   verifyText: ''
+#   storageStatePath: ''
+
+# Scripted or hint-guided flows that must keep working. See
+# qa/agent-critical-journeys.yaml.
+criticalJourneys: []
+
+# pr runs: true runs every critical journey on every PR, not only the ones the
+# diff maps to. Action input: always-run-critical-journeys. See
+# qa/agent-pr-always-run-critical.yaml.
+alwaysRunCriticalJourneys: false
+
+# Business invariants. See qa/agent-business-rules.yaml.
+rules: []
+
+limits:
+  maxSteps: 60              # actions in the whole run; the action's max-steps input overrides it
+  maxDurationMs: 600000     # 10 minutes
+  maxDefects: 25            # stop once this many distinct defects are recorded
+  verificationAttempts: 2   # clean-start replays of each candidate defect
+  actionTimeoutMs: 10000    # per click, fill or page load
+
+# See qa/agent-safety.yaml.
+safety:
+  # Empty means the host of target.baseUrl (here 127.0.0.1:8080).
+  allowedHosts: []
+  prohibitedActions: []
+  destructiveKeywords: [delete, remove account, deactivate, wipe, purge, pay now, confirm payment, send email]
+  allowDestructive: false
+  redactKeys: [password, token, secret, authorization, apiKey, api_key]
+
+# pr runs: changed paths -> areas -> journeys. See qa/agent-pr-impact-map.yaml.
+impactMap: []
+
+# pr runs: true explores the whole app with the budget the selected journeys
+# leave over. Action input: free-exploration. explore runs always explore. See
+# qa/agent-pr-free-exploration.yaml.
+freeExploration: false
+
+# See qa/agent-oracles.yaml.
+oracles:
+  consoleErrors: true
+  networkFailures: true
+  pageCrash: true
+  unresponsiveElements: true
+  brokenLinks: true
+  missingContent: true
+  accessibility: false
+  invariants: true
+  ignorePatterns: [favicon.ico, analytics, google-analytics, hotjar, sentry]
+  ignoreStatusFor: []
+
+# Only the heuristic planner is built. `ai` (with `model` and `maxAiCalls`) is
+# reserved for a planner that does not exist yet and has no effect today.
+planner:
+  kind: heuristic
+
+# See qa/agent-mobile-viewport.yaml.
+browser:
+  name: chromium
+  headless: true
+  viewport: { width: 1280, height: 800 }
+
+# Fingerprints of findings people have dismissed. See
+# qa/agent-known-false-positives.yaml.
+knownFalsePositives: []
+
+# See qa/agent-evidence.yaml.
+reporting:
+  outputDir: runs   # the action's output-dir input (default qa-agent-runs) overrides it
+  video: false
+  trace: true
+  har: false
+
+# advisory never recommends blocking a merge; blocking can. See
+# qa/agent-blocking-gate.yaml.
+mode: advisory

@@ -1,0 +1,61 @@
+# Safety: what the agent may never do while it explores. Every candidate action
+# is checked before it runs; a blocked one is skipped and logged in the job log
+# as "blocked: <action> (<reason>)". The report does not list them.
+#
+# Two limits to know:
+# - Scripted steps (auth and critical journeys) are not checked: they run
+#   exactly as written.
+# - Independently of this section, the agent flags any control whose label
+#   contains delete, remove, destroy, drop, deactivate, close account, wipe,
+#   purge, revoke, unsubscribe, pay now or charge as destructive. Only
+#   allowDestructive: true lets those run.
+#
+# Action inputs:
+#   mode: explore
+#   config: qa/agent-safety.yaml
+
+target:
+  baseUrl: http://127.0.0.1:8080
+
+safety:
+  # Hosts the agent may navigate to; a subdomain of one is allowed too
+  # (example.com allows www.example.com). Include the port when the URL has
+  # one. Leave it out to allow only the host of target.baseUrl.
+  allowedHosts: [127.0.0.1:8080]
+
+  # Case-insensitive regexes, matched against each action's description, typed
+  # value and selector, e.g. `Click link "New tab link" #external-link`. A
+  # match never runs, whatever allowDestructive says.
+  prohibitedActions:
+    # allowedHosts governs page loads only. This link opens example.com in a
+    # new tab, which a host check never sees, so block the click itself.
+    - New tab link
+
+  # Same matching as prohibitedActions, but these run when allowDestructive is
+  # true. This list replaces the defaults, so it repeats them before adding
+  # `reset`, which clears the login form here; in a real app it might be
+  # "archive" or "refund".
+  destructiveKeywords:
+    - delete
+    - remove account
+    - deactivate
+    - wipe
+    - purge
+    - pay now
+    - confirm payment
+    - send email
+    - reset
+
+  # true runs destructive actions. Only against a disposable environment whose
+  # data can be lost.
+  allowDestructive: false
+
+  # Keys whose values are masked as "***" in the finding evidence the agent
+  # writes (`key: value`, `"key": "value"` and `key=value` forms). Step
+  # descriptions, run.json and report.md are not masked: a password typed by a
+  # critical journey script shows in plain text there. Like every list, this
+  # replaces the defaults, so repeat them.
+  redactKeys: [password, token, secret, authorization, apiKey, api_key, session, cookie]
+
+limits:
+  maxSteps: 60

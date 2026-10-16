@@ -1,0 +1,79 @@
+# PR impact mapping: the diff decides what gets tested. Each changed file is
+# matched against impactMap, the entries it matches become impacted areas, and
+# each journey those areas list becomes a mission. Nothing else runs, since
+# freeExploration is off.
+#
+# Try it without opening a PR by naming the changed files yourself:
+#   Action inputs:
+#     mode: pr
+#     config: qa/agent-pr-impact-map.yaml
+#     changed-files: index.html            # instead of git diff
+#   Without `changed-files`, the action diffs origin/<PR base>...<PR head>,
+#   which needs `fetch-depth: 0` on actions/checkout. Override the refs with
+#   the `base` and `head` inputs.
+#
+# What a few diffs select:
+#   index.html              6 journeys, confidence 95%
+#   README.md               nothing: it matches, but its area lists no journey
+#   notes.txt               nothing, and the report lists notes.txt as not in
+#                           the impact map
+#   index.html, notes.txt   6 journeys, confidence 70%: one of two files mapped
+# A run that selects nothing exits 0 and reports "Nothing to test".
+
+target:
+  baseUrl: http://127.0.0.1:8080
+
+# The 6 journeys share 70% of maxSteps, at least 6 steps each:
+# floor(60 x 0.7 / 6) = 7 steps per journey. With free exploration off, the
+# other 30% goes unused.
+limits:
+  maxSteps: 60
+
+impactMap:
+  # `paths` match the whole repository-relative path: `index.html` matches only
+  # the root file, `*` matches within one folder, `**` across folders. `**/`
+  # needs at least one folder, so `**/*.md` misses a root README.md. One file
+  # may match several entries, and each becomes its own row in the report's
+  # "Why these journeys were selected" table, so splitting a page into areas
+  # shows which parts of it were tested.
+  #
+  # Each journey name becomes the mission's hints: its words of three or more
+  # letters, matched as substrings of the agent's action descriptions (e.g.
+  # `Click button "Sign in"`, `Fill textbox "Email" with ...`). Use words from
+  # the labels of the controls you mean, and avoid ones every control shares:
+  # "toggle" matches every checkbox and radio.
+  - paths: [index.html]
+    area: Login form
+    journeys: [username / password / sign in / reset]
+    # How sure this mapping is. A run's confidence is the average of the share
+    # of changed files that matched any entry and the highest confidence among
+    # the matched entries. Below 60% the report says so; with freeExploration
+    # on, the run then widens to the whole app.
+    confidence: 0.9
+
+  - paths: [index.html]
+    area: Input controls
+    journeys:
+      - email / quantity / comments
+      - checkbox / radio / submit selection
+    confidence: 0.9
+
+  - paths: [index.html]
+    area: Dynamic behaviour
+    journeys:
+      - load / enable / locked
+      - add list item
+    confidence: 0.9
+
+  - paths: [index.html]
+    area: Alerts and links
+    journeys: [alert / confirm / prompt / internal anchor]
+    confidence: 0.9
+
+  # Files that need no browser testing. Mapped to an area with no journeys,
+  # they select nothing on their own, but they stay out of the report's "not in
+  # the impact map" note and keep a mixed PR's confidence high.
+  - paths: ['qa/**', '.github/**', '*.md', '**/*.md']
+    area: Test config, CI and docs
+    journeys: []
+    confidence: 1

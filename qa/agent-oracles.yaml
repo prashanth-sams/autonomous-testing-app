@@ -1,0 +1,52 @@
+# Oracles decide what counts as a defect. Each one below can be switched off,
+# and two lists tell them what noise to ignore. Everything here is on by
+# default except accessibility, which this file turns on.
+#
+# Action inputs:
+#   mode: explore
+#   config: qa/agent-oracles.yaml
+
+target:
+  baseUrl: http://127.0.0.1:8080
+
+oracles:
+  # Console errors (medium) and uncaught JavaScript exceptions (high).
+  consoleErrors: true
+  # Failed requests and HTTP errors: 5xx is high, 4xx medium.
+  networkFailures: true
+  # The browser tab itself crashed (critical).
+  pageCrash: true
+  # A click that changed nothing: no navigation, no page change, no request
+  # (medium). Clicking a button whose message is already showing looks the
+  # same; see qa/agent-known-false-positives.yaml.
+  unresponsiveElements: true
+  # A page load that returned an HTTP error or failed, named after the link
+  # that led there (medium).
+  brokenLinks: true
+  # Blank pages, screens stuck loading, and "Something went wrong" style error
+  # screens (high).
+  missingContent: true
+  # axe-core WCAG 2 A and AA scan, once per page path. Only serious and
+  # critical violations are reported, as low and medium findings. The
+  # Playground has none today, so turning it on adds no findings here.
+  accessibility: true
+  # The `rules` section; see qa/agent-business-rules.yaml.
+  invariants: true
+
+  # Case-insensitive regexes. A console message or request URL that matches is
+  # ignored by the console, network and broken-link oracles. This list
+  # replaces the defaults, so it repeats them: favicon.ico matters here, since
+  # python's http.server answers it with a 404.
+  ignorePatterns: [favicon.ico, analytics, google-analytics, hotjar, sentry]
+
+  # Expected HTTP errors, as regexes matched against "<status> <url>", e.g. a
+  # 401 from an endpoint that checks whether the user is signed in. The
+  # Playground makes no API calls; this shows the format.
+  ignoreStatusFor: ['^401 .*/api/session$']
+
+# Two checks have no switch: an action that lands outside safety.allowedHosts
+# (low), and a submit, save, continue or next click that leaves the page as it
+# was with no success or error message (medium).
+
+limits:
+  maxSteps: 60
